@@ -12,8 +12,9 @@ contract FlightSuretyData {
 
     address private contractOwner;                                      // Account used to deploy contract
     bool private operational = true;                                    // Blocks all state changes throughout the contract if false
+    
+    mapping(address => bool) authorizedContracts;
 
-    address[] authorizeCallers = new address[](0);
     address[] activatedAirlines = new address[](0);
     uint256 REGISTRATION_FEE = 10 ether;
 
@@ -24,7 +25,7 @@ contract FlightSuretyData {
 
     
     struct Insuree {
-        bytes32 flight;
+        address airline;
         uint256 premium;
     }
     mapping(address => Insuree) public insurees;
@@ -41,13 +42,15 @@ contract FlightSuretyData {
     */
     constructor
                                 (
+                                    address firstAirline
                                 ) 
                                 public 
     {
         contractOwner = msg.sender;
+        airlines[firstAirline] = Airline({isActivated: true});
+        activatedAirlines.push(firstAirline);
     }
 
-    event Bought(uint );
 
     /********************************************************************************************/
     /*                                       FUNCTION MODIFIERS                                 */
@@ -76,6 +79,7 @@ contract FlightSuretyData {
         _;
     }
 
+
     /********************************************************************************************/
     /*                                       UTILITY FUNCTIONS                                  */
     /********************************************************************************************/
@@ -86,7 +90,7 @@ contract FlightSuretyData {
     * @return A bool that is the current operating status
     */      
     function isOperational() 
-                            public
+                            external
                             view
                             returns(bool)
 
@@ -105,19 +109,21 @@ contract FlightSuretyData {
                                 bool mode
                             ) 
                             external
-                            requireContractOwner 
+                            requireContractOwner
     {
         operational = mode;
     }
 
-    function authorizeCaller 
+    function authorizeCaller
                             (
-                                address _newCaller
+                                address contractAddress
                             )
                             external
+                            requireContractOwner
     {
-        authorizeCallers.push(_newCaller);
+        authorizedContracts[contractAddress] = true;
     }
+
 
     /********************************************************************************************/
     /*                                     SMART CONTRACT FUNCTIONS                             */
@@ -133,7 +139,7 @@ contract FlightSuretyData {
                                 address _newAirline   
                             )
                             external
-                            requireIsOperational
+                            //requireIsOperational
     {
         airlines[_newAirline] = Airline({isActivated: false});
         activatedAirlines.push(_newAirline);
@@ -163,15 +169,15 @@ contract FlightSuretyData {
     */   
     function buy
                             (
-                                address _insuree,
-                                bytes32 _flight                             
+                                address _airline,
+                                uint256 toPurchase                             
                             )
-                            external
+                            public
                             payable
     {
-        contractOwner.transfer(msg.value);
+        _airline.transfer(toPurchase);
         
-        insurees[_insuree] = Insuree({flight: _flight, premium: msg.value});
+        insurees[msg.sender] = Insuree({airline: _airline, premium: msg.value});
         
     }
 
@@ -182,14 +188,14 @@ contract FlightSuretyData {
     function creditInsurees
                                 (
                                     address _insuree,
-                                    bytes32 flightKey
+                                    address _airline
 
                                 )
                                 internal
                                 view
                                 returns(bool)
     {
-        if(insurees[_insuree].premium != 0 && insurees[_insuree].flight == flightKey){
+        if(insurees[_insuree].premium != 0 && insurees[_insuree].airline == _airline){
             return true;
         } else {
             return false;
@@ -204,12 +210,12 @@ contract FlightSuretyData {
     function pay
                             (
                                 address _insuree,
-                                bytes32 flightKey
+                                address _airline
                             )
                             external
                             payable
     {
-        require(creditInsurees(_insuree, flightKey));
+        require(creditInsurees(_insuree, _airline) == true);
         address insuree = msg.sender;
         uint256 _premium = insurees[msg.sender].premium;
         uint256 payout = _premium.mul(3).div(2);
@@ -222,15 +228,15 @@ contract FlightSuretyData {
     *   10ether 보내서 activate 상태로 만들기 
     */   
     function fund
-                            (   
+                            (
                             )
                             public
                             payable
     {
+        require(msg.value >= REGISTRATION_FEE);
         if(airlines[msg.sender].isActivated == false){
-            require(msg.value >= REGISTRATION_FEE);
-            address _receiver = contractOwner;
-            _receiver.transfer(10 ether);
+            
+            msg.sender.transfer(10 ether);
             airlines[msg.sender].isActivated = true;
 
         }
@@ -260,6 +266,7 @@ contract FlightSuretyData {
         fund();
     }
 
-
 }
+
+
 

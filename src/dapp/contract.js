@@ -14,6 +14,7 @@ export default class Contract {
         this.owner = null;
         this.airlines = [];
         this.passengers = [];
+        this.flights = [];
     }
 
     //시작할 때 어카운트 4개씩 넣기 
@@ -43,6 +44,50 @@ export default class Contract {
             .call({ from: self.owner}, callback);
     }
 
+
+    registerFlight(flight, datetime, callback) {
+        let self = this;
+        let payload = {
+            flight: flight,
+            timestamp: datetime
+        }
+        self.flightSuretyApp.methods
+            .registerFlight(payload.flight, payload.timestamp)
+            .send({from: self.owner}, (error, result) => {
+                let newFlight = {name: payload.flight, key: result}
+                this.flights.push(newFlight)
+                callback(error, newFlight.name);
+            });
+        
+    }
+
+    async purchaseInsurance(insuree, airline, ether, callback) {
+        let self = this;
+        let payload = {
+            insuree: insuree,
+            airline:airline,
+            ether: ether
+        }
+        let exist = false;
+        let flight_insure = null;
+        for (let i = 0; i < this.airlines.length; i++){
+            if (payload.airline == this.airlines[i]) {
+                exist = true;
+                flight_insure = this.airlines[i];
+            }            
+        }
+
+        if (exist == false) {
+            alert('No such airline available');
+        } else {
+            this.passengers.push(payload.insuree);
+           
+        }
+
+        await self.flightSuretyApp.methods.purchase(payload.airline, payload.ether, {from: payload.insuree, value: payload.ether});
+    } 
+
+
     //첫번째 airline과 들어온 flight 넣기 
     fetchFlightStatus(flight, callback) {
         let self = this;
@@ -56,5 +101,12 @@ export default class Contract {
             .send({ from: self.owner}, (error, result) => {
                 callback(error, payload);
             });
+        self.flightSuretyApp.events   
+            .FlightStatusInfo(function(err, data) {
+                if (!err)
+                    console.log(data);
+            });
     }
+
+    
 }

@@ -1,5 +1,5 @@
-var HDWalletProvider = require("@truffle/hdwallet-provider");
-var mnemonicPhrase = "shrug soon volume spray embrace space pulp square avoid gather release route";
+  var HDWalletProvider = require("@truffle/hdwallet-provider");
+var mnemonicPhrase = "frown hole electric suspect box suffer umbrella peanut someone exotic you galaxy";
 
 
 module.exports = {

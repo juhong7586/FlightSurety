@@ -5,8 +5,6 @@ pragma solidity ^0.4.25;
 // More info: https://www.nccgroup.trust/us/about-us/newsroom-and-events/blog/2018/november/smart-contract-insecurity-bad-arithmetic/
 
 import "../node_modules/openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "./FlightSuretyData.sol";
-
 
 /************************************************** */
 /* FlightSurety Smart Contract                      */
@@ -36,7 +34,7 @@ contract FlightSuretyApp {
         uint256 updatedTimestamp;        
         address airline;
     }
-    mapping(bytes32 => Flight) private flights;
+    mapping(bytes32 => Flight) flights;
 
     struct Airline {
         bool isRegistered;
@@ -46,7 +44,7 @@ contract FlightSuretyApp {
     }
     mapping(address => Airline) public airlines;
 
-    FlightSuretyData private data;
+    FlightSuretyData data;
 
  
     /********************************************************************************************/
@@ -87,10 +85,12 @@ contract FlightSuretyApp {
     */
     constructor
                                 (
+                                    address dataContract
                                 ) 
                                 public 
     {
         contractOwner = msg.sender;
+        data = FlightSuretyData(dataContract);
     }
 
     /********************************************************************************************/
@@ -150,6 +150,20 @@ contract FlightSuretyApp {
     }
 
 
+    // 내맘대로 
+    function purchase 
+                                (
+                                    address _airline,
+                                    uint256 toPurchase
+                                )
+                                external
+                                payable
+    {
+        require(toPurchase <= 1 ether);
+        require(msg.value >= toPurchase);
+        data.buy(_airline, toPurchase);
+    }
+
 
    /**
     * @dev Register a future flight for insuring.
@@ -161,6 +175,8 @@ contract FlightSuretyApp {
                                     uint256 timestamp
                                 )
                                 external
+                                
+                                
     {
         Flight memory newFlight = Flight({isRegistered: true, statusCode: 0, updatedTimestamp: timestamp, airline: msg.sender});
         bytes32 key = getFlightKey(msg.sender, flight, timestamp);
@@ -182,10 +198,11 @@ contract FlightSuretyApp {
 
     {
         bytes32 flightKey = getFlightKey(airline, flight, timestamp); 
+        flights[flightKey].statusCode = statusCode;
 
         // 돌려주기 
         if (statusCode == 20){
-            data.pay(msg.sender, flightKey);
+            data.pay(msg.sender, airline);
         }
     }
 
@@ -315,7 +332,6 @@ contract FlightSuretyApp {
         bytes32 key = keccak256(abi.encodePacked(index, airline, flight, timestamp)); 
         require(oracleResponses[key].isOpen, "Flight or timestamp do not match oracle request");
 
-        //이게 등록인가! 
         oracleResponses[key].responses[statusCode].push(msg.sender);
 
         // Information isn't considered verified until at least MIN_RESPONSES
@@ -390,6 +406,29 @@ contract FlightSuretyApp {
         return random;
     }
 
+    function addressToString(address _addr) public pure returns(string) {
+    bytes32 value = bytes32(uint256(uint160(_addr)));
+    bytes memory alphabet = "0123456789abcdef";
+
+    bytes memory str = new bytes(51);
+    str[0] = "0";
+    str[1] = "x";
+    for (uint i = 0; i < 20; i++) {
+        str[2+i*2] = alphabet[uint(uint8(value[i + 12] >> 4))];
+        str[3+i*2] = alphabet[uint(uint8(value[i + 12] & 0x0f))];
+    }
+    return string(str);
+}
+
 // endregion
 
 }   
+
+contract FlightSuretyData {
+    function isOperational() external pure returns(bool) {}
+    function registerAirline(address) external pure {}
+    function pay(address, address) external payable {}
+    function buy(address,uint256) public payable {}
+}
+
+

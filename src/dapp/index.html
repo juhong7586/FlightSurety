@@ -22,11 +22,34 @@
     </nav>
 
     <main class="container">
-
         <div id="display-wrapper" class="top-20">
         </div>
+
+        <br>
+        <h2>Register Flight</h2>
         <div class="row top-20">
-            <label class="form">Flight</label> <input type="text" id="flight-number"> <btn class="btn btn-primary" id="submit-oracle">Submit to Oracles</btn>
+            <label class="form">Flight</label> <input type="text" id="flight-regis">
+            <label class="form">Datetime</label> <input type="number" id="datetime">
+             <btn class="btn btn-primary" id="register-flight">Register</btn>
+        </div>
+
+
+        <br>
+        <h2>Purchase Insurance</h2>
+        <div class="row top-20">
+            <label class="form">Airline Address</label><input type="text" id="airline-address">
+            <label class="form">Passenger</label> <input type="text" id="insuree">
+            <label class="form">Ether</label> <input type="number" id="to-buy">
+             <btn class="btn btn-primary" id="purchase-insurance">Purchase</btn>
+        </div>
+
+        <br>
+        <h2>Fetch Flight Status</h2>
+        <div class="row top-20">
+            <label class="form">Flight</label> <input type="text" id="flight-number">
+            <!-- <label class="form">Address</label> <input type="text" id="address">
+            <label class="form">Timestamp</label> <input type="number" id="timestamp"> -->
+             <btn class="btn btn-primary" id="submit-oracle">Submit to Oracles</btn>
         </div>
     </main>
 
